@@ -59,38 +59,7 @@ function parseSseEvent(chunk) {
       dataLines.push(value);
     }
   }
-  return { event: eventName, data: dataLines.join("\n") };
-}
-
-function extractTokenData(data) {
-  if (!data) return "";
-  if (typeof data === "string") {
-    const parsed = parseJsonPayload(data);
-    if (parsed && typeof parsed === "object") {
-      if (parsed.token) return parsed.token;
-      if (parsed.content) return parsed.content;
-      if (parsed.text) return parsed.text;
-      if (parsed.delta?.content) return parsed.delta.content;
-      if (parsed.choices?.[0]?.delta?.content) {
-        return parsed.choices[0].delta.content;
-      }
-      if (parsed.choices?.[0]?.text) return parsed.choices[0].text;
-      if (parsed.assistant_message?.content) {
-        return parsed.assistant_message.content;
-      }
-      if (parsed.visitor_id || parsed.thread_id || parsed.user_message) {
-        return "";
-      }
-    }
-    return data;
-  }
-  if (typeof data === "object") {
-    if (data.token) return data.token;
-    if (data.content) return data.content;
-    if (data.text) return data.text;
-    if (data.delta?.content) return data.delta.content;
-  }
-  return "";
+  return { event: eventName, data: dataLines.join("\n"), dataLines };
 }
 
 export default function App() {
@@ -250,7 +219,7 @@ export default function App() {
             const chunk = buffer.slice(0, splitIndex);
             buffer = buffer.slice(splitIndex + 2);
             if (chunk.trim()) {
-              const { event: eventName, data } = parseSseEvent(chunk);
+              const { event: eventName, data, dataLines } = parseSseEvent(chunk);
               if (eventName === "meta") {
                 const meta = parseJsonPayload(data) || {};
                 const nextVisitorId =
@@ -266,6 +235,9 @@ export default function App() {
                     loadedThreadRef.current = meta.thread_id;
                   }
                 }
+                if (meta.emotion) {
+                  setCurrentEmotion(meta.emotion);
+                }
                 if (meta.user_message) {
                   setMessages((prev) =>
                     prev.map((message) =>
@@ -275,7 +247,10 @@ export default function App() {
                 }
               }
               if (eventName === "token") {
-                const token = extractTokenData(data);
+                let token = data;
+                if (dataLines.length > 1 && dataLines[0] === "") {
+                  token = dataLines.slice(1).join("\n");
+                }
                 if (token) {
                   assistantText += token;
                   setMessages((prev) =>
@@ -290,9 +265,9 @@ export default function App() {
               if (eventName === "done") {
                 const donePayload = parseJsonPayload(data) || {};
                 const assistantMessage = donePayload.assistant_message;
-                setCurrentEmotion(
-                  assistantMessage?.emotion || EMOTION_FALLBACK
-                );
+                if (assistantMessage?.emotion) {
+                  setCurrentEmotion(assistantMessage.emotion);
+                }
                 setMessages((prev) =>
                   prev.map((message) =>
                     message.id === tempAssistantId
