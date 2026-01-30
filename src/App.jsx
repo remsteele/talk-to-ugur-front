@@ -17,11 +17,9 @@ const api = axios.create({
 const STREAMING_ENABLED = true;
 
 const moodChips = [
-  "laidback",
-  "curious",
-  "friendly",
-  "sun-drenched",
-  "low pressure"
+  "explain git",
+  "why did my girlfriend leave me",
+  "you forgot to post the assignment",
 ];
 
 const EMOTION_FALLBACK = "neutral";
@@ -84,7 +82,7 @@ export default function App() {
   const name = "talk to ugur";
 
   const tagline = useMemo(
-    () => "Hang out, ask a question, or just vibe for a bit.",
+    () => "im better than you. plain and simple.",
     []
   );
 
@@ -101,7 +99,7 @@ export default function App() {
           }
         }
       } catch (err) {
-        setError("Could not start a session. Please refresh.");
+        setError("cant start session. refresh.");
       } finally {
         setLoading(false);
       }
@@ -139,7 +137,7 @@ export default function App() {
           setThreadId(data.thread_id);
         }
       } catch (err) {
-        setError("Could not load the thread. Start a new chat below.");
+        setError("cant load thread. start a new mess.");
       }
     };
 
@@ -199,7 +197,7 @@ export default function App() {
         );
 
         if (!response.ok || !response.body) {
-          throw new Error("Streaming failed");
+          throw new Error("streaming failed");
         }
 
         const reader = response.body.getReader();
@@ -283,7 +281,7 @@ export default function App() {
               }
               if (eventName === "error") {
                 streamError = true;
-                setError(data || "Ugur is taking a break. Try again soon.");
+                setError(data || "ugur on smoke break. try again soon.");
                 setCurrentEmotion(EMOTION_FALLBACK);
                 setMessages((prev) =>
                   prev.filter((message) => message.id !== tempAssistantId)
@@ -366,7 +364,7 @@ export default function App() {
         )
       );
       setCurrentEmotion(EMOTION_FALLBACK);
-      setError("Ugur is taking a break. Try again in a moment.");
+      setError("ugur on smoke break. try again soon.");
     } finally {
       setSending(false);
     }
@@ -394,24 +392,28 @@ export default function App() {
         </motion.h1>
         <p className="subtitle">{tagline}</p>
         <div className="chips">
-          {moodChips.map((chip) => (
-            <span key={chip} className="chip">
-              {chip}
-            </span>
-          ))}
+          <span className="chip-label">try this:</span>
+          <span className="chip-list">
+            {moodChips.map((chip, index) => (
+              <span key={chip} className="chip">
+                {chip}
+                {index < moodChips.length - 1 ? " · " : ""}
+              </span>
+            ))}
+          </span>
         </div>
       </header>
 
       <main className="panel">
         <div className="panel-header">
           <div>
-            <p className="panel-title">Chat with Ugur</p>
+            <p className="panel-title">talk to ugur</p>
             <p className="panel-meta">
-              {threadId ? "Back at it." : "Fresh thread."}
+          {threadId ? "you back. good." : "fresh thread. stay sharp."}
             </p>
           </div>
           <button className="ghost" type="button" onClick={startNewThread}>
-            new thread
+            reset thread
           </button>
         </div>
 
@@ -420,16 +422,20 @@ export default function App() {
             <p className="mood-label">ugur mood</p>
             <p className="mood-emotion">{currentEmotion}</p>
           </div>
+          <div className="brag">
+            you talk to real prof
+            <span className="brag-sub">come back with better code</span>
+          </div>
         </div>
 
         <div className="chat" ref={scrollRef}>
           {loading ? (
-            <div className="status">Spooling up a chill vibe...</div>
+            <div className="status">warming up...</div>
           ) : null}
           {!loading && messages.length === 0 ? (
             <div className="empty">
-              <p>Say hi. Ask for advice. Drop a hot take.</p>
-              <p className="muted">Ugur replies with mood.</p>
+              <p>talk. be clear. bring a real question.</p>
+              <p className="muted">ugur replies with mood and hard truth.</p>
             </div>
           ) : null}
 
@@ -470,21 +476,26 @@ export default function App() {
         <form className="composer" onSubmit={sendMessage}>
           <input
             type="text"
-            placeholder="Type your message..."
+            placeholder="type your message..."
             value={input}
             onChange={(event) => setInput(event.target.value)}
             disabled={sending}
+            title="be direct."
           />
-          <button type="submit" disabled={sending || !input.trim()}>
+          <button
+            type="submit"
+            disabled={sending || !input.trim()}
+            title="send it."
+          >
             send
           </button>
         </form>
       </main>
 
       <footer className="footer">
-        <p>built for late-night questions + slow coffee.</p>
+        <p>dirty cay shop wisdom. no polish.</p>
         <span className="dot" />
-        <p>API: {API_BASE}</p>
+        <p>api: {API_BASE}</p>
       </footer>
     </div>
   );

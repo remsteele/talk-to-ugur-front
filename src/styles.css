@@ -1,15 +1,15 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Archivo+Black&family=Bebas+Neue&display=swap");
 
 :root {
-  color-scheme: light;
-  --bg: #f9f3ea;
-  --bg-2: #f6efe5;
-  --ink: #1d1d1b;
-  --muted: rgba(29, 29, 27, 0.64);
-  --accent: #f46d4f;
-  --accent-2: #f8b26a;
-  --card: rgba(255, 255, 255, 0.82);
-  --shadow: 0 30px 90px rgba(29, 29, 27, 0.15);
+  color-scheme: dark;
+  --bg: #1b1511;
+  --bg-2: #231a16;
+  --ink: #efe7dd;
+  --muted: rgba(239, 231, 221, 0.62);
+  --accent: #a90f0f;
+  --accent-2: #d1512d;
+  --card: rgba(28, 21, 18, 0.92);
+  --shadow: 0 28px 60px rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -19,7 +19,7 @@
 }
 
 body {
-  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-family: "Archivo Black", "Arial Black", system-ui, sans-serif;
   background: var(--bg);
   color: var(--ink);
   min-height: 100vh;
@@ -32,20 +32,20 @@ body {
 .page {
   position: relative;
   min-height: 100vh;
-  padding: 56px clamp(24px, 6vw, 96px) 48px;
+  padding: 48px clamp(24px, 6vw, 96px) 56px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
   overflow: hidden;
 }
 
 .backdrop {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at top left, #fff6ea 0%, transparent 52%),
-    radial-gradient(circle at 70% 20%, #fcd9c6 0%, transparent 48%),
-    radial-gradient(circle at 20% 80%, #fde7d0 0%, transparent 50%),
-    linear-gradient(135deg, #fef4ea, #f8efe4);
+  background: radial-gradient(circle at 10% 10%, #2d1f18 0%, transparent 55%),
+    radial-gradient(circle at 80% 15%, #3b2018 0%, transparent 55%),
+    radial-gradient(circle at 30% 80%, #2a2018 0%, transparent 60%),
+    linear-gradient(135deg, #16100d, #241a15);
   z-index: 0;
 }
 
@@ -53,8 +53,8 @@ body {
   position: absolute;
   inset: 0;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
-  mix-blend-mode: soft-light;
-  opacity: 0.22;
+  mix-blend-mode: screen;
+  opacity: 0.18;
   z-index: 1;
 }
 
@@ -69,22 +69,22 @@ body {
   max-width: 720px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
+  transform: rotate(0.5deg);
 }
 
 .title {
-  font-family: "Fraunces", serif;
-  font-size: clamp(48px, 6vw, 96px);
+  font-family: "Bebas Neue", "Arial Black", sans-serif;
+  font-size: clamp(64px, 8vw, 130px);
   letter-spacing: -0.02em;
   text-transform: lowercase;
   display: inline-block;
-  background: linear-gradient(90deg, #191917, #1d1d1b, #6d3523);
-  -webkit-background-clip: text;
-  color: transparent;
+  color: #f6e7d3;
+  text-shadow: 6px 6px 0 rgba(0, 0, 0, 0.6);
 }
 
 .subtitle {
-  font-size: clamp(16px, 2vw, 20px);
+  font-size: clamp(16px, 2.6vw, 22px);
   color: var(--muted);
   max-width: 520px;
 }
@@ -92,29 +92,39 @@ body {
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.chip-label {
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.chip-list {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .chip {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(29, 29, 27, 0.12);
-  font-size: 12px;
+  font-size: 14px;
   text-transform: lowercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.02em;
+  color: var(--ink);
 }
 
 .panel {
   background: var(--card);
-  border-radius: 28px;
+  border-radius: 14px;
   padding: clamp(20px, 3vw, 36px);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 2px solid rgba(239, 231, 221, 0.18);
   display: flex;
   flex-direction: column;
   gap: 24px;
+  transform: rotate(-0.6deg);
 }
 
 .panel-header {
@@ -126,36 +136,58 @@ body {
 
 .mood-row {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: -8px;
 }
 
 .mood-card {
-  background: rgba(255, 255, 255, 0.65);
-  border-radius: 16px;
-  border: 1px solid rgba(29, 29, 27, 0.1);
-  padding: 10px 16px;
+  background: rgba(22, 16, 13, 0.9);
+  border-radius: 4px;
+  border: 2px solid rgba(239, 231, 221, 0.25);
+  padding: 10px 14px;
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  transform: rotate(1.2deg);
 }
 
 .mood-label {
   font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: rgba(29, 29, 27, 0.45);
+  letter-spacing: 0.1em;
+  color: rgba(239, 231, 221, 0.55);
 }
 
 .mood-emotion {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   text-transform: lowercase;
 }
 
+.brag {
+  font-family: "Bebas Neue", "Arial Black", sans-serif;
+  font-size: clamp(20px, 3vw, 36px);
+  color: var(--accent-2);
+  text-shadow: 4px 4px 0 rgba(0, 0, 0, 0.6);
+  transform: rotate(-1deg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.brag-sub {
+  font-size: 14px;
+  color: var(--ink);
+  text-shadow: none;
+  letter-spacing: 0.06em;
+}
+
 .panel-title {
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .panel-meta {
@@ -164,10 +196,10 @@ body {
 }
 
 .ghost {
-  border: 1px solid rgba(29, 29, 27, 0.15);
+  border: 2px solid rgba(239, 231, 221, 0.4);
   background: transparent;
-  padding: 8px 16px;
-  border-radius: 999px;
+  padding: 10px 16px;
+  border-radius: 0;
   font-size: 12px;
   text-transform: lowercase;
   cursor: pointer;
@@ -175,18 +207,20 @@ body {
 }
 
 .ghost:hover {
-  border-color: rgba(29, 29, 27, 0.4);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .chat {
-  background: rgba(255, 255, 255, 0.55);
-  border-radius: 22px;
+  background: rgba(18, 13, 10, 0.8);
+  border-radius: 8px;
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   max-height: 420px;
   overflow-y: auto;
+  border: 2px dashed rgba(239, 231, 221, 0.2);
 }
 
 .status,
@@ -202,23 +236,24 @@ body {
 
 .bubble {
   padding: 14px 16px 18px;
-  border-radius: 18px;
+  border-radius: 6px;
   display: flex;
   flex-direction: column;
   gap: 8px;
   max-width: 80%;
   position: relative;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, 0.4);
 }
 
 .user {
   align-self: flex-end;
-  background: linear-gradient(120deg, #ffd9c4, #fbd2c0);
+  background: linear-gradient(120deg, #3a1d1d, #5c1919);
 }
 
 .assistant {
   align-self: flex-start;
-  background: white;
-  border: 1px solid rgba(29, 29, 27, 0.06);
+  background: #1b1411;
+  border: 2px solid rgba(239, 231, 221, 0.18);
 }
 
 .pending {
@@ -241,7 +276,7 @@ body {
 
 .timestamp {
   font-size: 11px;
-  color: rgba(29, 29, 27, 0.5);
+  color: rgba(239, 231, 221, 0.5);
 }
 
 .typing {
@@ -256,18 +291,24 @@ body {
 
 .composer input {
   flex: 1;
-  border-radius: 999px;
-  border: 1px solid rgba(29, 29, 27, 0.12);
+  border-radius: 0;
+  border: 2px solid rgba(239, 231, 221, 0.4);
   padding: 14px 18px;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(20, 15, 12, 0.9);
+  color: var(--ink);
+}
+
+.composer input::placeholder {
+  color: rgba(239, 231, 221, 0.45);
+  text-transform: lowercase;
 }
 
 .composer button {
-  border-radius: 999px;
+  border-radius: 0;
   border: none;
   background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #1c1b17;
+  color: #f9e7d2;
   font-weight: 600;
   padding: 14px 22px;
   cursor: pointer;
@@ -280,12 +321,12 @@ body {
 }
 
 .composer button:hover:not(:disabled) {
-  transform: translateY(-1px) scale(1.01);
-  box-shadow: 0 12px 25px rgba(244, 109, 79, 0.35);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 12px 25px rgba(169, 15, 15, 0.5);
 }
 
 .error {
-  color: #a11d1d;
+  color: #ff5c5c;
   font-size: 13px;
   padding: 8px 0 0 6px;
 }
@@ -298,7 +339,7 @@ body {
   color: var(--muted);
   font-size: 12px;
   text-transform: lowercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
 }
 
 .dot {
