@@ -22,6 +22,29 @@ const moodChips = [
   "low pressure"
 ];
 
+const EMOTION_FALLBACK = "neutral";
+const EMOTION_ORDER = [
+  "neutral",
+  "happy",
+  "sad",
+  "angry",
+  "surprised",
+  "confused",
+  "thinking",
+  "excited",
+  "tired",
+  "sleepy",
+  "love",
+  "focused",
+  "curious",
+  "proud",
+  "anxious"
+];
+const EMOTION_TO_INDEX = EMOTION_ORDER.reduce((acc, emotion, index) => {
+  acc[emotion] = index;
+  return acc;
+}, {});
+
 function formatTime(iso) {
   if (!iso) return "";
   const date = new Date(iso);
@@ -52,6 +75,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [currentEmotion, setCurrentEmotion] = useState(EMOTION_FALLBACK);
   const loadedThreadRef = useRef(null);
   const scrollRef = useRef(null);
 
@@ -103,6 +127,11 @@ export default function App() {
             ? data.messages
             : [];
         setMessages(nextMessages);
+        const lastEmotion = [...nextMessages]
+          .reverse()
+          .find((message) => message.role === "assistant" && message.emotion)
+          ?.emotion;
+        setCurrentEmotion(lastEmotion || EMOTION_FALLBACK);
         if (data.thread_id && data.thread_id !== threadId) {
           localStorage.setItem(STORAGE_KEYS.thread, data.thread_id);
           setThreadId(data.thread_id);
@@ -126,6 +155,7 @@ export default function App() {
 
     setError("");
     setSending(true);
+    setCurrentEmotion("thinking");
     const wasNewThread = !threadId;
     const messageText = input.trim();
     const tempId = `temp-${Date.now()}`;
@@ -166,9 +196,18 @@ export default function App() {
       setMessages((prev) => {
         const withoutTemp = prev.filter((message) => message.id !== tempId);
         if (Array.isArray(data.messages) && data.messages.length > 0) {
+          const latestEmotion = [...data.messages]
+            .reverse()
+            .find(
+              (message) => message.role === "assistant" && message.emotion
+            )?.emotion;
+          if (latestEmotion) setCurrentEmotion(latestEmotion);
           return data.messages;
         }
         if (data.message) {
+          if (data.message.role === "assistant" && data.message.emotion) {
+            setCurrentEmotion(data.message.emotion);
+          }
           return [...withoutTemp, data.message];
         }
         const next = [];
@@ -177,11 +216,17 @@ export default function App() {
         } else {
           next.push(tempMessage);
         }
-        if (data.assistant_message) next.push(data.assistant_message);
+        if (data.assistant_message) {
+          next.push(data.assistant_message);
+          if (data.assistant_message.emotion) {
+            setCurrentEmotion(data.assistant_message.emotion);
+          }
+        }
         return [...withoutTemp, ...next];
       });
     } catch (err) {
       setMessages((prev) => prev.filter((message) => message.id !== tempId));
+      setCurrentEmotion(EMOTION_FALLBACK);
       setError("Ugur is taking a break. Try again in a moment.");
     } finally {
       setSending(false);
@@ -231,6 +276,13 @@ export default function App() {
           </button>
         </div>
 
+        <div className="mood-row">
+          <div className="mood-card">
+            <p className="mood-label">ugur mood</p>
+            <p className="mood-emotion">{currentEmotion}</p>
+          </div>
+        </div>
+
         <div className="chat" ref={scrollRef}>
           {loading ? (
             <div className="status">Spooling up a chill vibe...</div>
@@ -253,17 +305,6 @@ export default function App() {
               {message.role === "assistant" ? (
                 <div className="assistant-header">
                   <span className="assistant-name">ugur</span>
-                  {message.emotion ? (
-                    <img
-                      src={`${API_BASE}/emotions/${message.emotion}.png`}
-                      alt={message.emotion}
-                      className="emotion"
-                      loading="lazy"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                      }}
-                    />
-                  ) : null}
                 </div>
               ) : null}
               <p>{message.content}</p>

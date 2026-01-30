@@ -124,6 +124,35 @@ body {
   gap: 16px;
 }
 
+.mood-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.mood-card {
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 16px;
+  border: 1px solid rgba(29, 29, 27, 0.1);
+  padding: 10px 16px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.mood-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: rgba(29, 29, 27, 0.45);
+}
+
+.mood-emotion {
+  font-size: 18px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
 .panel-title {
   font-size: 20px;
   font-weight: 600;
@@ -210,14 +239,6 @@ body {
   font-weight: 600;
 }
 
-.emotion {
-  width: 24px;
-  height: 24px;
-  border-radius: 10px;
-  object-fit: cover;
-  border: 1px solid rgba(29, 29, 27, 0.1);
-}
-
 .timestamp {
   font-size: 11px;
   color: rgba(29, 29, 27, 0.5);
@@ -298,6 +319,10 @@ body {
 
   .panel {
     padding: 20px;
+  }
+
+  .mood-row {
+    justify-content: flex-start;
   }
 
   .chat {
