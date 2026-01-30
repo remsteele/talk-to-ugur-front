@@ -374,6 +374,7 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEYS.thread);
     setThreadId(null);
     setMessages([]);
+    setCurrentEmotion(EMOTION_FALLBACK);
     loadedThreadRef.current = null;
   };
 
@@ -409,7 +410,7 @@ export default function App() {
           <div>
             <p className="panel-title">talk to ugur</p>
             <p className="panel-meta">
-          {threadId ? "you back. good." : "fresh thread. stay sharp."}
+          {threadId ? "you back. good." : "fresh thread."}
             </p>
           </div>
           <button className="ghost" type="button" onClick={startNewThread}>
@@ -435,7 +436,7 @@ export default function App() {
           {!loading && messages.length === 0 ? (
             <div className="empty">
               <p>talk. be clear. bring a real question.</p>
-              <p className="muted">ugur replies with mood and hard truth.</p>
+              <p className="muted">dont be a smart ass.</p>
             </div>
           ) : null}
 
