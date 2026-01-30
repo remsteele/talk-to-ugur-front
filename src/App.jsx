@@ -127,14 +127,23 @@ export default function App() {
     setError("");
     setSending(true);
     const wasNewThread = !threadId;
+    const messageText = input.trim();
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = {
+      id: tempId,
+      role: "user",
+      content: messageText,
+      created_at: new Date().toISOString()
+    };
 
     try {
       const payload = {
-        message: input.trim(),
+        message: messageText,
         ...(threadId ? { thread_id: threadId } : {})
       };
 
       setInput("");
+      setMessages((prev) => [...prev, tempMessage]);
       const response = await api.post("/api/v1/chat/messages", payload, {
         headers: visitorId ? { "X-Visitor-Id": visitorId } : {}
       });
@@ -154,17 +163,25 @@ export default function App() {
         }
       }
 
-      const next = [];
-      if (data.user_message) next.push(data.user_message);
-      if (data.assistant_message) next.push(data.assistant_message);
-      if (next.length > 0) {
-        setMessages((prev) => [...prev, ...next]);
-      } else if (Array.isArray(data.messages) && data.messages.length > 0) {
-        setMessages(data.messages);
-      } else if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
-      }
+      setMessages((prev) => {
+        const withoutTemp = prev.filter((message) => message.id !== tempId);
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
+          return data.messages;
+        }
+        if (data.message) {
+          return [...withoutTemp, data.message];
+        }
+        const next = [];
+        if (data.user_message) {
+          next.push(data.user_message);
+        } else {
+          next.push(tempMessage);
+        }
+        if (data.assistant_message) next.push(data.assistant_message);
+        return [...withoutTemp, ...next];
+      });
     } catch (err) {
+      setMessages((prev) => prev.filter((message) => message.id !== tempId));
       setError("Ugur is taking a break. Try again in a moment.");
     } finally {
       setSending(false);
