@@ -14,6 +14,8 @@ const api = axios.create({
   baseURL: API_BASE
 });
 
+const STREAMING_ENABLED = true;
+
 const moodChips = [
   "laidback",
   "curious",
@@ -23,27 +25,6 @@ const moodChips = [
 ];
 
 const EMOTION_FALLBACK = "neutral";
-const EMOTION_ORDER = [
-  "neutral",
-  "happy",
-  "sad",
-  "angry",
-  "surprised",
-  "confused",
-  "thinking",
-  "excited",
-  "tired",
-  "sleepy",
-  "love",
-  "focused",
-  "curious",
-  "proud",
-  "anxious"
-];
-const EMOTION_TO_INDEX = EMOTION_ORDER.reduce((acc, emotion, index) => {
-  acc[emotion] = index;
-  return acc;
-}, {});
 
 function formatTime(iso) {
   if (!iso) return "";
@@ -63,6 +44,55 @@ function parseJsonPayload(payload) {
   return payload;
 }
 
+function parseSseEvent(chunk) {
+  const lines = chunk.split("\n").filter(Boolean);
+  let eventName = "message";
+  const dataLines = [];
+  for (const line of lines) {
+    if (line.startsWith("event:")) {
+      eventName = line.slice(6).trim();
+      continue;
+    }
+    if (line.startsWith("data:")) {
+      let value = line.slice(5);
+      if (value.startsWith(" ")) value = value.slice(1);
+      dataLines.push(value);
+    }
+  }
+  return { event: eventName, data: dataLines.join("\n") };
+}
+
+function extractTokenData(data) {
+  if (!data) return "";
+  if (typeof data === "string") {
+    const parsed = parseJsonPayload(data);
+    if (parsed && typeof parsed === "object") {
+      if (parsed.token) return parsed.token;
+      if (parsed.content) return parsed.content;
+      if (parsed.text) return parsed.text;
+      if (parsed.delta?.content) return parsed.delta.content;
+      if (parsed.choices?.[0]?.delta?.content) {
+        return parsed.choices[0].delta.content;
+      }
+      if (parsed.choices?.[0]?.text) return parsed.choices[0].text;
+      if (parsed.assistant_message?.content) {
+        return parsed.assistant_message.content;
+      }
+      if (parsed.visitor_id || parsed.thread_id || parsed.user_message) {
+        return "";
+      }
+    }
+    return data;
+  }
+  if (typeof data === "object") {
+    if (data.token) return data.token;
+    if (data.content) return data.content;
+    if (data.text) return data.text;
+    if (data.delta?.content) return data.delta.content;
+  }
+  return "";
+}
+
 export default function App() {
   const [visitorId, setVisitorId] = useState(
     localStorage.getItem(STORAGE_KEYS.visitor)
@@ -78,6 +108,9 @@ export default function App() {
   const [currentEmotion, setCurrentEmotion] = useState(EMOTION_FALLBACK);
   const loadedThreadRef = useRef(null);
   const scrollRef = useRef(null);
+  const hasStreamingAssistant = messages.some(
+    (message) => message.streaming
+  );
 
   const name = "talk to ugur";
 
@@ -159,11 +192,19 @@ export default function App() {
     const wasNewThread = !threadId;
     const messageText = input.trim();
     const tempId = `temp-${Date.now()}`;
+    const tempAssistantId = `assistant-${Date.now()}`;
     const tempMessage = {
       id: tempId,
       role: "user",
       content: messageText,
       created_at: new Date().toISOString()
+    };
+    const tempAssistantMessage = {
+      id: tempAssistantId,
+      role: "assistant",
+      content: "",
+      created_at: new Date().toISOString(),
+      streaming: true
     };
 
     try {
@@ -173,59 +214,182 @@ export default function App() {
       };
 
       setInput("");
-      setMessages((prev) => [...prev, tempMessage]);
-      const response = await api.post("/api/v1/chat/messages", payload, {
-        headers: visitorId ? { "X-Visitor-Id": visitorId } : {}
-      });
-      const data = response.data || {};
+      setMessages((prev) => [...prev, tempMessage, tempAssistantMessage]);
 
-      const nextVisitorId =
-        response.headers?.["x-visitor-id"] || data.visitor_id;
-      if (nextVisitorId) {
-        localStorage.setItem(STORAGE_KEYS.visitor, nextVisitorId);
-        setVisitorId(nextVisitorId);
-      }
-      if (data.thread_id) {
-        localStorage.setItem(STORAGE_KEYS.thread, data.thread_id);
-        setThreadId(data.thread_id);
-        if (wasNewThread) {
-          loadedThreadRef.current = data.thread_id;
-        }
-      }
+      if (STREAMING_ENABLED) {
+        const response = await fetch(
+          `${API_BASE}/api/v1/chat/messages?stream=true`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(visitorId ? { "X-Visitor-Id": visitorId } : {})
+            },
+            body: JSON.stringify(payload)
+          }
+        );
 
-      setMessages((prev) => {
-        const withoutTemp = prev.filter((message) => message.id !== tempId);
-        if (Array.isArray(data.messages) && data.messages.length > 0) {
-          const latestEmotion = [...data.messages]
-            .reverse()
-            .find(
-              (message) => message.role === "assistant" && message.emotion
-            )?.emotion;
-          if (latestEmotion) setCurrentEmotion(latestEmotion);
-          return data.messages;
+        if (!response.ok || !response.body) {
+          throw new Error("Streaming failed");
         }
-        if (data.message) {
-          if (data.message.role === "assistant" && data.message.emotion) {
-            setCurrentEmotion(data.message.emotion);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let assistantText = "";
+        let streamError = false;
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          buffer = buffer.replace(/\r\n/g, "\n");
+
+          let splitIndex = buffer.indexOf("\n\n");
+          while (splitIndex !== -1) {
+            const chunk = buffer.slice(0, splitIndex);
+            buffer = buffer.slice(splitIndex + 2);
+            if (chunk.trim()) {
+              const { event: eventName, data } = parseSseEvent(chunk);
+              if (eventName === "meta") {
+                const meta = parseJsonPayload(data) || {};
+                const nextVisitorId =
+                  meta.visitor_id || response.headers.get("x-visitor-id");
+                if (nextVisitorId) {
+                  localStorage.setItem(STORAGE_KEYS.visitor, nextVisitorId);
+                  setVisitorId(nextVisitorId);
+                }
+                if (meta.thread_id) {
+                  localStorage.setItem(STORAGE_KEYS.thread, meta.thread_id);
+                  setThreadId(meta.thread_id);
+                  if (wasNewThread) {
+                    loadedThreadRef.current = meta.thread_id;
+                  }
+                }
+                if (meta.user_message) {
+                  setMessages((prev) =>
+                    prev.map((message) =>
+                      message.id === tempId ? meta.user_message : message
+                    )
+                  );
+                }
+              }
+              if (eventName === "token") {
+                const token = extractTokenData(data);
+                if (token) {
+                  assistantText += token;
+                  setMessages((prev) =>
+                    prev.map((message) =>
+                      message.id === tempAssistantId
+                        ? { ...message, content: assistantText }
+                        : message
+                    )
+                  );
+                }
+              }
+              if (eventName === "done") {
+                const donePayload = parseJsonPayload(data) || {};
+                const assistantMessage = donePayload.assistant_message;
+                setCurrentEmotion(
+                  assistantMessage?.emotion || EMOTION_FALLBACK
+                );
+                setMessages((prev) =>
+                  prev.map((message) =>
+                    message.id === tempAssistantId
+                      ? {
+                          ...(assistantMessage || message),
+                          content:
+                            assistantMessage?.content || assistantText || "",
+                          streaming: false
+                        }
+                      : message
+                  )
+                );
+              }
+              if (eventName === "error") {
+                streamError = true;
+                setError(data || "Ugur is taking a break. Try again soon.");
+                setCurrentEmotion(EMOTION_FALLBACK);
+                setMessages((prev) =>
+                  prev.filter((message) => message.id !== tempAssistantId)
+                );
+              }
+            }
+            splitIndex = buffer.indexOf("\n\n");
           }
-          return [...withoutTemp, data.message];
+          if (streamError) break;
         }
-        const next = [];
-        if (data.user_message) {
-          next.push(data.user_message);
-        } else {
-          next.push(tempMessage);
+
+        if (!streamError) {
+          setMessages((prev) =>
+            prev.map((message) =>
+              message.id === tempAssistantId
+                ? { ...message, streaming: false }
+                : message
+            )
+          );
         }
-        if (data.assistant_message) {
-          next.push(data.assistant_message);
-          if (data.assistant_message.emotion) {
-            setCurrentEmotion(data.assistant_message.emotion);
+      } else {
+        const response = await api.post("/api/v1/chat/messages", payload, {
+          headers: visitorId ? { "X-Visitor-Id": visitorId } : {}
+        });
+        const data = response.data || {};
+
+        const nextVisitorId =
+          response.headers?.["x-visitor-id"] || data.visitor_id;
+        if (nextVisitorId) {
+          localStorage.setItem(STORAGE_KEYS.visitor, nextVisitorId);
+          setVisitorId(nextVisitorId);
+        }
+        if (data.thread_id) {
+          localStorage.setItem(STORAGE_KEYS.thread, data.thread_id);
+          setThreadId(data.thread_id);
+          if (wasNewThread) {
+            loadedThreadRef.current = data.thread_id;
           }
         }
-        return [...withoutTemp, ...next];
-      });
+
+        setMessages((prev) => {
+          const withoutTemp = prev.filter(
+            (message) =>
+              message.id !== tempId && message.id !== tempAssistantId
+          );
+          if (Array.isArray(data.messages) && data.messages.length > 0) {
+            const latestEmotion = [...data.messages]
+              .reverse()
+              .find(
+                (message) => message.role === "assistant" && message.emotion
+              )?.emotion;
+            if (latestEmotion) setCurrentEmotion(latestEmotion);
+            return data.messages;
+          }
+          if (data.message) {
+            if (data.message.role === "assistant" && data.message.emotion) {
+              setCurrentEmotion(data.message.emotion);
+            }
+            return [...withoutTemp, data.message];
+          }
+          const next = [];
+          if (data.user_message) {
+            next.push(data.user_message);
+          } else {
+            next.push(tempMessage);
+          }
+          if (data.assistant_message) {
+            next.push(data.assistant_message);
+            if (data.assistant_message.emotion) {
+              setCurrentEmotion(data.assistant_message.emotion);
+            }
+          }
+          return [...withoutTemp, ...next];
+        });
+      }
     } catch (err) {
-      setMessages((prev) => prev.filter((message) => message.id !== tempId));
+      setMessages((prev) =>
+        prev.filter(
+          (message) => message.id !== tempId && message.id !== tempAssistantId
+        )
+      );
       setCurrentEmotion(EMOTION_FALLBACK);
       setError("Ugur is taking a break. Try again in a moment.");
     } finally {
@@ -305,6 +469,9 @@ export default function App() {
               {message.role === "assistant" ? (
                 <div className="assistant-header">
                   <span className="assistant-name">ugur</span>
+                  {message.streaming ? (
+                    <span className="typing">streaming...</span>
+                  ) : null}
                 </div>
               ) : null}
               <p>{message.content}</p>
@@ -312,7 +479,7 @@ export default function App() {
             </div>
           ))}
 
-          {sending ? (
+          {sending && !hasStreamingAssistant ? (
             <div className="bubble assistant pending">
               <div className="assistant-header">
                 <span className="assistant-name">ugur</span>
