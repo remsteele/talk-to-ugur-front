@@ -502,9 +502,9 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <p>dirty cay shop wisdom. no polish.</p>
+        <p>this is all playful fun.</p>
         <span className="dot" />
-        <p>api: {API_BASE}</p>
+        <p>leaked ip: 192.168.1.1</p>
       </footer>
     </div>
   );
