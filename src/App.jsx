@@ -29,6 +29,17 @@ function formatTime(iso) {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function parseJsonPayload(payload) {
+  if (typeof payload === "string") {
+    try {
+      return JSON.parse(payload);
+    } catch (err) {
+      return null;
+    }
+  }
+  return payload;
+}
+
 export default function App() {
   const [visitorId, setVisitorId] = useState(
     localStorage.getItem(STORAGE_KEYS.visitor)
@@ -41,7 +52,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
-  const [loadedThread, setLoadedThread] = useState(false);
+  const loadedThreadRef = useRef(null);
   const scrollRef = useRef(null);
 
   const name = "talk to ugur";
@@ -75,7 +86,8 @@ export default function App() {
 
   useEffect(() => {
     const loadThread = async () => {
-      if (!threadId || loadedThread) return;
+      if (!threadId || loadedThreadRef.current === threadId) return;
+      loadedThreadRef.current = threadId;
       try {
         const response = await api.get(
           `/api/v1/chat/threads/${threadId}/messages`,
@@ -83,8 +95,8 @@ export default function App() {
             params: { limit: 100 }
           }
         );
-        const payload = response.data;
-        const data = payload || {};
+        const payload = parseJsonPayload(response.data);
+        const data = payload && typeof payload === "object" ? payload : {};
         const nextMessages = Array.isArray(payload)
           ? payload
           : Array.isArray(data.messages)
@@ -97,13 +109,11 @@ export default function App() {
         }
       } catch (err) {
         setError("Could not load the thread. Start a new chat below.");
-      } finally {
-        setLoadedThread(true);
       }
     };
 
     loadThread();
-  }, [threadId, loadedThread]);
+  }, [threadId]);
 
   useEffect(() => {
     if (!scrollRef.current) return;
@@ -140,7 +150,7 @@ export default function App() {
         localStorage.setItem(STORAGE_KEYS.thread, data.thread_id);
         setThreadId(data.thread_id);
         if (wasNewThread) {
-          setLoadedThread(true);
+          loadedThreadRef.current = data.thread_id;
         }
       }
 
@@ -165,7 +175,7 @@ export default function App() {
     localStorage.removeItem(STORAGE_KEYS.thread);
     setThreadId(null);
     setMessages([]);
-    setLoadedThread(false);
+    loadedThreadRef.current = null;
   };
 
   return (
