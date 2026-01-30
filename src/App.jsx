@@ -396,9 +396,17 @@ export default function App() {
           <span className="chip-label">try this:</span>
           <span className="chip-list">
             {moodChips.map((chip, index) => (
-              <span key={chip} className="chip">
-                {chip}
-                {index < moodChips.length - 1 ? " · " : ""}
+              <span key={chip} className="chip-item">
+                <button
+                  type="button"
+                  className="chip-button"
+                  onClick={() => setInput(chip)}
+                >
+                  {chip}
+                </button>
+                {index < moodChips.length - 1 ? (
+                  <span className="chip-sep"> · </span>
+                ) : null}
               </span>
             ))}
           </span>

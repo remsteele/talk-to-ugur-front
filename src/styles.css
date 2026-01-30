@@ -105,14 +105,37 @@ body {
 .chip-list {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 0;
 }
 
-.chip {
-  font-size: 14px;
+.chip-item {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.chip-button {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
   text-transform: lowercase;
   letter-spacing: 0.02em;
   color: var(--ink);
+  cursor: pointer;
+}
+
+.chip-button:hover {
+  color: var(--accent-2);
+}
+
+.chip-button:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+.chip-sep {
+  color: var(--muted);
+  padding: 0 6px;
 }
 
 .panel {
