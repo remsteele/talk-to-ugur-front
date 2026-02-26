@@ -356,13 +356,35 @@ body {
 
 .footer {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  justify-content: space-between;
   align-items: center;
+  gap: 16px;
   color: var(--muted);
   font-size: 12px;
   text-transform: lowercase;
   letter-spacing: 0.06em;
+}
+
+.footer-left,
+.footer-right {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-right {
+  margin-left: auto;
+}
+
+.footer-link {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
 }
 
 .dot {
@@ -408,5 +430,13 @@ body {
 
   .composer button {
     width: 100%;
+  }
+
+  .footer {
+    align-items: flex-start;
+  }
+
+  .footer-right {
+    margin-left: 0;
   }
 }

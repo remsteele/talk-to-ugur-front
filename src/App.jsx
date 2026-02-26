@@ -502,9 +502,30 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <p>this is all playful fun.</p>
-        <span className="dot" />
-        <p>leaked ip: 192.168.1.1</p>
+        <div className="footer-left">
+          <p>this is all playful fun.</p>
+          <span className="dot" />
+          <p>leaked ip: 192.168.1.1</p>
+        </div>
+        <div className="footer-right">
+          <a
+            className="footer-link"
+            href="https://github.com/remsteele/talk-to-ugur-front"
+            target="_blank"
+            rel="noreferrer"
+          >
+            front github
+          </a>
+          <span className="dot" />
+          <a
+            className="footer-link"
+            href="https://github.com/remsteele/talk-to-ugur-back.git"
+            target="_blank"
+            rel="noreferrer"
+          >
+            back github
+          </a>
+        </div>
       </footer>
     </div>
   );
